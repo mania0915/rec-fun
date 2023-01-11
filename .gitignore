@@ -1,2 +1,12 @@
 out
 code/tmp/
+*/__pycache__
+__pycache__
+*.log
+*.zip
+log/
+/data.bak/*
+/tmp/
+*/.attach_pid*
+*.pyc
+*/__pycache__/*

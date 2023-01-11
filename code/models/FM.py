@@ -7,16 +7,20 @@
 @author      :eason
 @version     :1.0
 '''
-from tqdm import tqdm
 import pandas as pd
 import numpy as np
-from sklearn.preprocessing import LabelEncoder
-from sklearn.model_selection import train_test_split
-from tensorflow.python.keras.layers import Input, Dense, Add
-from tensorflow.python.keras.models import *
-from tensorflow.python.keras import regularizers,layers,optimizers
-import tensorflow.python.keras.backend as K
 
+import tensorflow as tf
+from tensorflow.keras import *
+from tensorflow.keras.layers import *
+from tensorflow.keras.models import *
+from tensorflow.keras.callbacks import *
+import tensorflow.keras.backend as K
+
+from sklearn.model_selection import train_test_split
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import LabelEncoder
+from tqdm import tqdm
 
 # dense特征取对数　　sparse特征进行类别编码
 def process_feat(data, dense_feats, parse_feats):
@@ -43,18 +47,20 @@ def process_feat(data, dense_feats, parse_feats):
 
 class crossLayer(layers.Layer):
     def __init__(self, input_dim, output_dim=10, **kwargs):
-        super(crossLayer,self).__init__(**kwargs)
+        super(crossLayer, self).__init__(**kwargs)
 
         self.input_dim = input_dim
         self.output_dim = output_dim
-        self.kernel = self.add_weight(name = 'kernel',
-                                      shape = (self.input_dim, self.output),
+       
+        self.kernel = self.add_weight(name='kernel',
+                                      shape=(self.input_dim, self.output_dim),
                                       initializer='glorot_uniform',
                                       trainable=True)
-        def call(self,x):
-            a = K.pow(K.dot(x, self.kernel),2)
-            b = K.dot(K.pow(x,2),K.pow(self.kernel,2))
-            return 0.5 * K.mean(a-b, 1, keepdims=True)
+
+    def call(self, x):  # 
+        a = K.pow(K.dot(x, self.kernel), 2)
+        b = K.dot(K.pow(x, 2), K.pow(self.kernel, 2))
+        return 0.5 * K.mean(a - b, 1, keepdims=True)
 
 
 
@@ -69,12 +75,13 @@ def FM(feature_dim):
     cross = crossLayer(feature_dim)(inputs)
     
     add = Add()([linear, cross])
-    pred = Dense(units=1, activation='sigmod')(add)
+    pred = Dense(units=1, activation='sigmoid')(add)
     model = Model(inputs=inputs, outputs=pred)
     model.summary()
-    model.compile(loss='binary_crossentroy',
+    auc_metric = tf.keras.metrics.AUC(name='auc', num_thresholds=20000, curve='ROC')
+    model.compile(loss='binary_crossentropy',
                 optimizer = optimizers.Adam(),
-                metrics=['binary_accuracy,auc']
+                metrics=['binary_accuracy',auc_metric]
                 )   
     return model
 
